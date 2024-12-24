@@ -1,8 +1,9 @@
 module tinydocker
 
-go 1.21.5
+go 1.20
 
 require (
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli v1.22.16
 )
