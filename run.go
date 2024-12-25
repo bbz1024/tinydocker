@@ -17,6 +17,7 @@ import (
 去初始化容器的一些资源。
 */
 func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
+	// -------------------- 创建子进程 --------------------
 	parent, writePipe := container.NewParentProcess(tty)
 	if parent == nil {
 		log.Errorf("New parent process error")
@@ -25,6 +26,10 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
 	if err := parent.Start(); err != nil {
 		log.Errorf("Run parent.Start err:%v", err)
 	}
+	//fmt.Println("4", os.Getpid())        // 这里是 tinydocker的程序id
+	//fmt.Println("5", parent.Process.Pid) // run -it /bin/sh 这里的id指的是 /bin/sh 的id
+	// --------------------  --------------------
+
 	// -------------------- cgroup 注册 --------------------
 	// 创建cgroup manager, 并通过调用set和apply设置资源限制并使限制在容器上生效
 	cgroupManager := cgroups.NewCgroupManager("tinydocker-cgroup")

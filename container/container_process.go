@@ -23,7 +23,11 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 		log.Errorf("New pipe error %v", err)
 		return nil, nil
 	}
-	cmd := exec.Command("/proc/self/exe", "init")
+	//fmt.Println("1", os.Getpid()) // 这里是 tinydocker的程序id
+	// -------------------- 子进程 --------------------
+	cmd := exec.Command("/proc/self/exe", "init") // RunContainerInitProcess
+	//fmt.Println("2", os.Getpid())                 // 这里是 tinydocker的程序id
+	// clone出来一个namespace隔离的进程
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
 	}
@@ -33,5 +37,6 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 		cmd.Stderr = os.Stderr
 	}
 	cmd.ExtraFiles = []*os.File{readPipe}
+	cmd.Dir = "/root/busybox"
 	return cmd, writePipe
 }
