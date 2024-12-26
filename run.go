@@ -44,6 +44,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
 	// 在子进程创建后才能通过pipe来发送参数
 	sendInitCommand(comArray, writePipe)
 	_ = parent.Wait()
+	container.DeleteWorkSpace("/root/")
 }
 
 // sendInitCommand 通过writePipe将指令发送给子进程
