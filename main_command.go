@@ -39,6 +39,10 @@ var runCommand = cli.Command{
 			Name:  "v",
 			Usage: "volume,e.g.: -v /ect/conf:/etc/conf",
 		},
+		cli.StringFlag{
+			Name:  "name",
+			Usage: "container name",
+		},
 	},
 	/*
 		这里是run命令执行的真正函数。
@@ -70,8 +74,9 @@ var runCommand = cli.Command{
 		}
 		log.Info("resConf:", resConf)
 		volume := context.String("v")
+		containerName := context.String("name")
 
-		Run(tty, cmdArray, volume, resConf)
+		Run(tty, cmdArray, volume, containerName, resConf)
 		return nil
 	},
 }
@@ -95,6 +100,14 @@ var commitCommand = cli.Command{
 		}
 		imageName := context.Args().Get(0)
 		commitContainer(imageName)
+		return nil
+	},
+}
+var listCommand = cli.Command{
+	Name:  "ps",
+	Usage: "list all the containers",
+	Action: func(context *cli.Context) error {
+		ListContainers()
 		return nil
 	},
 }

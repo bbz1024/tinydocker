@@ -1,8 +1,10 @@
 package main
 
 import (
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"tinydocker/cgroups"
@@ -16,7 +18,9 @@ import (
 进程，然后在子进程中，调用/proc/self/exe,也就是调用自己，发送init参数，调用我们写的init方法，
 去初始化容器的一些资源。
 */
-func Run(tty bool, comArray []string, volume string, res *subsystems.ResourceConfig) {
+func Run(tty bool, comArray []string, volume, containerName string, res *subsystems.ResourceConfig) {
+	containerId := container.GenerateContainerID() // 生成 10 位容器 id
+
 	log.Info("1-", os.Getpid()) // tinydocker的pid
 
 	// -------------------- 创建子进程 --------------------
@@ -35,6 +39,12 @@ func Run(tty bool, comArray []string, volume string, res *subsystems.ResourceCon
 	log.Info("4-", parent.Process.Pid) // sh的pid
 	// --------------------  --------------------
 
+	// record container info
+	err := container.RecordContainerInfo(parent.Process.Pid, comArray, containerName, containerId)
+	if err != nil {
+		log.Errorf("Record container info error %v", err)
+		return
+	}
 	// -------------------- cgroup 注册 --------------------
 	// 创建cgroup manager, 并通过调用set和apply设置资源限制并使限制在容器上生效
 	cgroupManager := cgroups.NewCgroupManager("tinydocker-cgroup")
@@ -55,6 +65,8 @@ func Run(tty bool, comArray []string, volume string, res *subsystems.ResourceCon
 		_ = parent.Wait()
 		log.Info("6-", os.Getpid())
 		container.DeleteWorkSpace("/root/", volume)
+		container.DeleteContainerInfo(containerId)
+
 	}
 }
 
@@ -64,4 +76,13 @@ func sendInitCommand(comArray []string, writePipe *os.File) {
 	log.Infof("command all is %s", command)
 	_, _ = writePipe.WriteString(command)
 	_ = writePipe.Close()
+}
+func randStringBytes(n int) string {
+	letterBytes := "1234567890"
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }
