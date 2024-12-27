@@ -20,8 +20,7 @@ import (
 使用mount先去挂载proc文件系统，以便后面通过ps等系统命令去查看当前进程资源的情况。
 */
 func RunContainerInitProcess() error {
-	// 获取当前pid
-	//fmt.Println("3", os.Getpid()) // 到这里已经是容器内部id了
+	log.Info("9-", os.Getpid()) // 容器内隔离pid == 1
 	// 从 pipe 中读取命令
 	cmdArray := readUserCommand()
 	if len(cmdArray) == 0 {

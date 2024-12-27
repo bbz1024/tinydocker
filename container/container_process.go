@@ -25,10 +25,10 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		log.Errorf("New pipe error %v", err)
 		return nil, nil
 	}
-	//fmt.Println("1", os.Getpid()) // 这里是 tinydocker的程序id
+	log.Info("7-", os.Getpid()) // tinydocker pid
 	// -------------------- 子进程 --------------------
 	cmd := exec.Command("/proc/self/exe", "init") // RunContainerInitProcess
-	//fmt.Println("2", os.Getpid())                 // 这里是 tinydocker的程序id
+	log.Info("8-", os.Getpid())                   // tinydocker pid
 	// clone出来一个namespace隔离的进程
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,

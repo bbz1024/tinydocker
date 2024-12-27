@@ -22,7 +22,7 @@ func main() {
 		runCommand,
 		commitCommand,
 	}
-
+	log.Info("main-", os.Getpid())
 	app.Before = func(context *cli.Context) error {
 		// Log as JSON instead of the default ASCII formatter.
 		log.SetFormatter(&log.JSONFormatter{})
