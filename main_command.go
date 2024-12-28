@@ -75,9 +75,8 @@ var runCommand = cli.Command{
 		}
 		log.Info("resConf:", resConf)
 		volume := context.String("v")
-		containerName := context.String("name")
-
-		Run(tty, cmdArray, volume, containerName, resConf)
+		//containerName := context.String("name")
+		Run(tty, cmdArray, volume,  resConf)
 		return nil
 	},
 }
@@ -90,8 +89,6 @@ var initCommand = cli.Command{
 		return err
 	},
 }
-
-// commit 命令
 var commitCommand = cli.Command{
 	Name:  "commit",
 	Usage: "commit container to image",
@@ -119,12 +116,11 @@ var logCommand = cli.Command{
 		if len(context.Args()) < 1 {
 			return fmt.Errorf("please input your container name")
 		}
-		containerName := context.Args().Get(0)
-		logContainer(containerName)
+		containerId := context.Args().Get(0)
+		logContainer(containerId)
 		return nil
 	},
 }
-
 var execCommand = cli.Command{
 	Name:  "exec",
 	Usage: "exec a command into container",
@@ -158,7 +154,6 @@ var stopCommand = cli.Command{
 		return nil
 	},
 }
-
 var removeCommand = cli.Command{
 	Name:  "rm",
 	Usage: "remove unused containers,e.g. mydocker rm 1234567890",

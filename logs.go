@@ -8,8 +8,8 @@ import (
 	"tinydocker/container"
 )
 
-func logContainer(containerName string) {
-	logFileLocation := fmt.Sprintf(container.InfoLocFormat, containerName) +container.LogFile
+func logContainer(containerId string) {
+	logFileLocation := fmt.Sprintf(container.InfoLocFormat, containerId)+ container.LogFile
 	file, err := os.Open(logFileLocation)
 	defer file.Close()
 	if err != nil {

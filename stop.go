@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path"
@@ -15,7 +14,7 @@ import (
 
 func stopContainer(containerId string) {
 	// 1. 根据容器Id查询容器信息
-	containerInfo, err := getInfoByContainerId(containerId)
+	containerInfo, err := container.GetInfoByContainerId(containerId)
 	if err != nil {
 		log.Errorf("Get container %s info error %v", containerId, err)
 		return
@@ -45,16 +44,4 @@ func stopContainer(containerId string) {
 		log.Errorf("Write file %s error:%v", configFilePath, err)
 	}
 }
-func getInfoByContainerId(containerId string) (*container.Info, error) {
-	dirPath := fmt.Sprintf(container.InfoLocFormat, containerId)
-	configFilePath := path.Join(dirPath, container.ConfigName)
-	contentBytes, err := os.ReadFile(configFilePath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "read file %s", configFilePath)
-	}
-	var containerInfo container.Info
-	if err = json.Unmarshal(contentBytes, &containerInfo); err != nil {
-		return nil, err
-	}
-	return &containerInfo, nil
-}
+

@@ -19,10 +19,10 @@ const (
 	STOP          = "stopped"
 	Exit          = "exited"
 	InfoLoc       = "/var/lib/tinydocker/containers/"
-	InfoLocFormat = "/var/lib/tinydocker/containers/%s/"
+	InfoLocFormat = InfoLoc + "%s/"
 	ConfigName    = "config.json"
 	IDLength      = 10
-	LogFile       = "%s-json.log"
+	LogFile       = "container.log"
 )
 
 type Info struct {
@@ -32,13 +32,10 @@ type Info struct {
 	Command     string `json:"command"`    // 容器内init运行命令
 	CreatedTime string `json:"createTime"` // 创建时间
 	Status      string `json:"status"`     // 容器的状态
+	Volume      string `json:"volume"`     // 挂载的卷
 }
 
-func RecordContainerInfo(containerPID int, commandArray []string, containerName, containerId string) error {
-	// 如果未指定容器名，则使用随机生成的containerID
-	if containerName == "" {
-		containerName = containerId
-	}
+func RecordContainerInfo(containerPID int, commandArray []string, containerId, volume string) error {
 	command := strings.Join(commandArray, "")
 	containerInfo := &Info{
 		Id:          containerId,
@@ -46,7 +43,8 @@ func RecordContainerInfo(containerPID int, commandArray []string, containerName,
 		Command:     command,
 		CreatedTime: time.Now().Format("2006-01-02 15:04:05"),
 		Status:      RUNNING,
-		Name:        containerName,
+		Name:        containerId,
+		Volume:      volume,
 	}
 
 	jsonBytes, err := json.Marshal(containerInfo)
@@ -90,4 +88,17 @@ func randStringBytes(n int) string {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
 	return string(b)
+}
+func GetInfoByContainerId(containerId string) (*Info, error) {
+	dirPath := fmt.Sprintf(InfoLocFormat, containerId)
+	configFilePath := path.Join(dirPath, ConfigName)
+	contentBytes, err := os.ReadFile(configFilePath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "read file %s", configFilePath)
+	}
+	var containerInfo Info
+	if err = json.Unmarshal(contentBytes, &containerInfo); err != nil {
+		return nil, err
+	}
+	return &containerInfo, nil
 }

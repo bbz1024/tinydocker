@@ -18,7 +18,7 @@ import (
 3.下面的clone参数就是去fork出来一个新进程，并且使用了namespace隔离新创建的进程和外部环境。
 4.如果用户指定了-it参数，就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool, volume, containerId,containerName string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume, containerId string) (*exec.Cmd, *os.File) {
 	// 创建匿名管道用于传递参数，将readPipe作为子进程的ExtraFiles，子进程从readPipe中读取参数
 	// 父进程中则通过writePipe将参数写入管道
 	readPipe, writePipe, err := os.Pipe()
@@ -34,12 +34,12 @@ func NewParentProcess(tty bool, volume, containerId,containerName string) (*exec
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
 	}
+	dirPath := fmt.Sprintf(InfoLocFormat, containerId) // 创建元数据目录
 	if tty {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	} else {
-		dirPath := fmt.Sprintf(InfoLocFormat, containerName)
 		if err := os.MkdirAll(dirPath, constant.Perm0622); err != nil {
 			log.Errorf("NewParentProcess mkdir %s error %v", dirPath, err)
 			return nil, nil
@@ -54,11 +54,9 @@ func NewParentProcess(tty bool, volume, containerId,containerName string) (*exec
 		cmd.Stderr = stdLogFile
 	}
 	cmd.ExtraFiles = []*os.File{readPipe}
-	rootPath := "/root"
-	NewWorkSpace(rootPath, volume)
-
+	NewWorkSpace(dirPath, volume)
 	// 指定容器的工作目录，也就是通过unionfs的overlayfs机制
-	cmd.Dir = path.Join(rootPath, "merged")
+	cmd.Dir = path.Join(dirPath, "merged")
 	return cmd, writePipe
 }
 
@@ -111,11 +109,12 @@ func createDirs(rootPath string) {
 	}
 }
 
+const defaultFs = "/root/busybox.tar"
+
 func createLower(rootPath string) {
 	// 把busybox作为overlayfs中的lower层
 	busyboxPath := path.Join(rootPath, "busybox")
-	busyboxTarPath := path.Join(rootPath, "busybox.tar")
-	log.Infof("busybox:%s busybox.tar:%s", busyboxPath, busyboxTarPath)
+	log.Infof("busybox:%s busybox.tar:%s", busyboxPath, defaultFs)
 	// 检查是否已经存在busybox文件夹
 	exist, err := PathExists(busyboxPath)
 	if err != nil {
@@ -126,7 +125,7 @@ func createLower(rootPath string) {
 		if err = os.Mkdir(busyboxPath, 0777); err != nil {
 			log.Errorf("Mkdir dir %s error. %v", busyboxPath, err)
 		}
-		if _, err = exec.Command("tar", "-xvf", busyboxTarPath, "-C", busyboxPath).CombinedOutput(); err != nil {
+		if _, err = exec.Command("tar", "-xvf", defaultFs, "-C", busyboxPath).CombinedOutput(); err != nil {
 			log.Errorf("Untar dir %s error %v", busyboxPath, err)
 		}
 	}
