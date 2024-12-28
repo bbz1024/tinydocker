@@ -21,22 +21,22 @@ import (
 func Run(tty bool, comArray []string, volume, containerName string, res *subsystems.ResourceConfig) {
 	containerId := container.GenerateContainerID() // 生成 10 位容器 id
 
-	log.Info("1-", os.Getpid()) // tinydocker的pid
+	//log.Info("1-", os.Getpid()) // tinydocker的pid
 
 	// -------------------- 创建子进程 --------------------
-	parent, writePipe := container.NewParentProcess(tty, volume)
+	parent, writePipe := container.NewParentProcess(tty, volume, containerId,containerName)
 	if parent == nil {
 		log.Errorf("New parent process error")
 		return
 	}
-	log.Info("2-", os.Getpid()) // tinydocker的pid
+	//log.Info("2-", os.Getpid()) // tinydocker的pid
 
 	// 这里会进行clone一个完全隔离的子进程，进程pid==1，start执行的完成
 	if err := parent.Start(); err != nil {
 		log.Errorf("Run parent.Start err:%v", err)
 	}
-	log.Info("3-", os.Getpid())        // tinydocker的pid
-	log.Info("4-", parent.Process.Pid) // sh的pid
+	//log.Info("3-", os.Getpid())        // tinydocker的pid
+	//log.Info("4-", parent.Process.Pid) // sh的pid
 	// --------------------  --------------------
 
 	// record container info
@@ -49,10 +49,10 @@ func Run(tty bool, comArray []string, volume, containerName string, res *subsyst
 	// 创建cgroup manager, 并通过调用set和apply设置资源限制并使限制在容器上生效
 	cgroupManager := cgroups.NewCgroupManager("tinydocker-cgroup")
 	defer func() {
-		log.Info("5-", os.Getpid())
+		//log.Info("5-", os.Getpid())
 		// 当子进程退出时，删除cgroup，执行这个操作
 		cgroupManager.Destroy()
-		log.Infof("exit success")
+		//log.Infof("exit success")
 	}()
 	_ = cgroupManager.Set(res)
 	_ = cgroupManager.Apply(parent.Process.Pid, res)
@@ -63,7 +63,7 @@ func Run(tty bool, comArray []string, volume, containerName string, res *subsyst
 	// 如果是tty，那么父进程等待，就是前台运行，否则就是跳过，实现后台运行
 	if tty {
 		_ = parent.Wait()
-		log.Info("6-", os.Getpid())
+		//log.Info("6-", os.Getpid())
 		container.DeleteWorkSpace("/root/", volume)
 		container.DeleteContainerInfo(containerId)
 

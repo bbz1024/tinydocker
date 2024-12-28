@@ -19,9 +19,10 @@ const (
 	STOP          = "stopped"
 	Exit          = "exited"
 	InfoLoc       = "/var/lib/tinydocker/containers/"
-	InfoLocFormat = InfoLoc + "%s/"
+	InfoLocFormat = "/var/lib/tinydocker/containers/%s/"
 	ConfigName    = "config.json"
 	IDLength      = 10
+	LogFile       = "%s-json.log"
 )
 
 type Info struct {

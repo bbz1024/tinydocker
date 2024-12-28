@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"syscall"
+	"tinydocker/constant"
 )
 
 // NewParentProcess 构建 command 用于启动一个新进程
@@ -17,7 +18,7 @@ import (
 3.下面的clone参数就是去fork出来一个新进程，并且使用了namespace隔离新创建的进程和外部环境。
 4.如果用户指定了-it参数，就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume, containerId,containerName string) (*exec.Cmd, *os.File) {
 	// 创建匿名管道用于传递参数，将readPipe作为子进程的ExtraFiles，子进程从readPipe中读取参数
 	// 父进程中则通过writePipe将参数写入管道
 	readPipe, writePipe, err := os.Pipe()
@@ -25,10 +26,10 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		log.Errorf("New pipe error %v", err)
 		return nil, nil
 	}
-	log.Info("7-", os.Getpid()) // tinydocker pid
+	//log.Info("7-", os.Getpid()) // tinydocker pid
 	// -------------------- 子进程 --------------------
 	cmd := exec.Command("/proc/self/exe", "init") // RunContainerInitProcess
-	log.Info("8-", os.Getpid())                   // tinydocker pid
+	//log.Info("8-", os.Getpid())                   // tinydocker pid
 	// clone出来一个namespace隔离的进程
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
@@ -37,6 +38,20 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+	} else {
+		dirPath := fmt.Sprintf(InfoLocFormat, containerName)
+		if err := os.MkdirAll(dirPath, constant.Perm0622); err != nil {
+			log.Errorf("NewParentProcess mkdir %s error %v", dirPath, err)
+			return nil, nil
+		}
+		stdLogFilePath := dirPath + LogFile
+		stdLogFile, err := os.Create(stdLogFilePath)
+		if err != nil {
+			log.Errorf("NewParentProcess create file %s error %v", stdLogFilePath, err)
+			return nil, nil
+		}
+		cmd.Stdout = stdLogFile
+		cmd.Stderr = stdLogFile
 	}
 	cmd.ExtraFiles = []*os.File{readPipe}
 	rootPath := "/root"
